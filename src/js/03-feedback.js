@@ -1,41 +1,35 @@
-import throttle from 'lodash.throttle';
-
-const refs = {
-  form: document.querySelector('.feedback-form'),
-  textarea: document.querySelector('.feedback-form textarea'),
-  email: document.querySelector('.feedback-form input[type=email]'),
-};
-const input = refs.form.elements;
-const FORM_STORAGE_KEY = 'feedback-form-state';
-const savedData = localStorage.getItem(FORM_STORAGE_KEY);
+import Throttle from 'lodash.throttle';
+const formRef = document.querySelector('.feedback-form');
+const STORAGE_KEY = 'feedback-form-state';
+formRef.addEventListener('input', Throttle(handleFormInput), 500);
+populateFormOutput();
 const formData = {};
-
-refs.form.addEventListener('submit', onFormSubmit);
-refs.email.addEventListener('input', throttle(onInput, 500));
-refs.textarea.addEventListener('input', throttle(onInput, 500));
-
-if (savedData) {
-  const formData = JSON.parse(savedData);
-  refs.email.value = formData.email;
-  refs.textarea.value = formData.message;
+function handleFormInput(event) {
+  const email = event.currentTarget.elements.email.value;
+  const message = event.currentTarget.elements.message.value;
+  formData[event.target.name] = event.target.value;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ email, message }));
 }
-
-function onInput(event) {
-  formData.email = input.email.value;
-  formData.message = input.message.value;
-  localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(formData));
-}
-function onFormSubmit(event) {
+formRef.addEventListener('submit', handleFormSubmit);
+function handleFormSubmit(event) {
   event.preventDefault();
-  formData.email = input.email.value;
-  formData.message = input.message.value;
-  if (input.email.value === '' || input.message.value === '') {
-    alert(
-      'EMAIL and MESSAGE field can not be empty! Please fill in BOTH fields.'
-    );
-  } else {
-    console.log(formData);
-    refs.form.reset();
-    localStorage.removeItem(FORM_STORAGE_KEY);
+  const email = event.currentTarget.elements.email.value;
+  const message = event.currentTarget.elements.message.value;
+  if (email === '' || message === '') {
+    return alert('Заполните все поля');
+  }
+  const saved = localStorage.getItem(STORAGE_KEY);
+  const parsed = JSON.parse(saved);
+  console.log(parsed);
+  localStorage.removeItem(STORAGE_KEY);
+  event.currentTarget.reset();
+}
+function populateFormOutput(event) {
+  const savedMessage = localStorage.getItem(STORAGE_KEY);
+  if (savedMessage) {
+    formRef.elements.email.value = JSON.parse(savedMessage).email;
+    formRef.elements.message.value = JSON.parse(savedMessage).message;
+    formData[event.target.name] = event.target.value;
+    formData = JSON.parse(savedMessage);
   }
 }
