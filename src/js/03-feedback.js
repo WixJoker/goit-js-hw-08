@@ -1,35 +1,50 @@
-import Throttle from 'lodash.throttle';
-const formRef = document.querySelector('.feedback-form');
-const STORAGE_KEY = 'feedback-form-state';
-formRef.addEventListener('input', Throttle(handleFormInput), 500);
-populateFormOutput();
+const form = document.querySelector('.feedback-form');
+const emailEl = document.querySelector('input');
+const messageEl = document.querySelector('textarea');
 const formData = {};
-function handleFormInput(event) {
-  const email = event.currentTarget.elements.email.value;
-  const message = event.currentTarget.elements.message.value;
-  formData[event.target.name] = event.target.value;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ email, message }));
-}
-formRef.addEventListener('submit', handleFormSubmit);
-function handleFormSubmit(event) {
+
+checkLocaleStorage();
+
+emailEl.addEventListener('input', throttle(getInputValues, 500));
+messageEl.addEventListener('input', throttle(getInputValues, 500));
+
+function getInputValues(event) {
   event.preventDefault();
-  const email = event.currentTarget.elements.email.value;
-  const message = event.currentTarget.elements.message.value;
+
+  const name = event.target.name;
+  const value = event.target.value;
+
+  formData[name] = value;
+
+  localStorage.setItem('feedback-form-state', JSON.stringify(formData));
+}
+
+form.addEventListener('submit', sendFormData);
+
+function sendFormData(event) {
+  event.preventDefault();
+
+  const email = event.target.elements.email.value;
+  const message = event.target.elements.message.value;
+
   if (email === '' || message === '') {
-    return alert('Заполните все поля');
+    alert('Please fill in all the fields!');
+  } else {
+    localStorage.removeItem('feedback-form-state');
+    console.log({ email, message });
   }
-  const saved = localStorage.getItem(STORAGE_KEY);
-  const parsed = JSON.parse(saved);
-  console.log(parsed);
-  localStorage.removeItem(STORAGE_KEY);
+
   event.currentTarget.reset();
 }
-function populateFormOutput(event) {
-  const savedMessage = localStorage.getItem(STORAGE_KEY);
-  if (savedMessage) {
-    formRef.elements.email.value = JSON.parse(savedMessage).email;
-    formRef.elements.message.value = JSON.parse(savedMessage).message;
-    formData[event.target.name] = event.target.value;
-    formData = JSON.parse(savedMessage);
+
+function checkLocaleStorage() {
+  const savedData = localStorage.getItem('feedback-form-state')
+    ? JSON.parse(localStorage.getItem('feedback-form-state'))
+    : {};
+  if (savedData.email) {
+    emailEl.value = savedData.email;
+  }
+  if (savedData.message) {
+    messageEl.value = savedData.message;
   }
 }
